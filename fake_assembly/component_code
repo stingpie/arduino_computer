@@ -1,0 +1,514 @@
+const char PROGMEM names[][4] = {
+  {0x11,'J','M','P'}, // jump to absolute position
+  {0x12,'J','R','P'}, // jump relatively
+  {0x13,'J','R','M'}, // jump relatively backwards
+  
+  {0x15,'X','E','C'}, // make x equal C
+  {0x16,'X','E','Y'}, // make x equal y
+  {0x17,'X','E','V'}, // make x equal to relative address
+  {0x18,'V','E','V'}, // make relative address(arg1) equal to relative address(arg2)
+  {0x08,'V','E','C'}, // make relative address(arg1) equal to constant (arg2)
+  {0x28,'V','E','Y'}, // make relative address(arg1) equal to constant address(arg2) 
+   
+  {0x81,'X','M','M'},
+  {0x91,'X','P','P'},
+  {0x82,'X','M','Y'},
+  {0x92,'X','P','Y'},
+  {0x83,'X','M','C'},
+  {0x93,'X','P','C'},
+  
+  {0x85,'X','D','C'},
+  {0x95,'X','U','C'},
+  {0x86,'X','D','Y'},
+  {0x96,'X','U','Y'},
+  {0x87,'X','O','C'},
+  {0x97,'X','P','C'},
+  {0x88,'X','O','Y'},
+  {0x98,'X','P','Y'},
+  
+  {0x8A,'Q','E','Y'}, // if x == y
+  {0x8b,'Q','E','C'}, // if x == c
+  {0x8c,'Q','G','Y'}, // if x > y
+  {0x8D,'Q','G','C'}, // ix x > c
+  {0x8E,'Q','L','C'}, // if x < c
+
+  {0xb5,'T','O','V'}, // put constant addres(arg2) int OUT at index[ constant address(arg1)]
+  {0xb7,'T','O','C'}, // put constant{arg2} into OUT at index[constant address (arg1)]
+  
+  {0xBA,'O','U','T'}, // completely output the characters in the OUT buffer
+  
+  {0xBC,'N','I','V'}, // put IN char at index[variable address] into variable address
+  {0xBD,'N','I','C'}, // put IN char at index[variable address] into constant address
+  {0xBF,'E','M','P'}, // empty IN buffer
+  
+  {0xE1,'W','T','C'}, // wait a constant amount of time
+  {0xE2,'W','T','V'}, // wait for ____ miliseconds at a constant address. 
+  {0xE3,'T','W','T'}, // wait for 16 bit length
+
+  {0xD5,'D','R','W'}, // draw : x y tile
+  {0xD6,'U','P','D'}, // update screen
+  {0xD7,'C','O','D'}, // replace code : code start position  ,  start(in the variable space)  ,  end(in the variable space)
+  {0xD8,'G','T','L'}, // request tile from display arduino
+  {0xE5,'C','L','R'}, // clear the screen
+  {0xE6,'H','E','X'}, // number to hexadecimal
+  {0xEA,'P','N','C'}, // pin IN assign to constant address
+  {0xFA,'P','N','V'}, // pin IN assign to variable address
+  {0xEB,'P','O','C'}, // pin OUT constant
+  {0xFB,'P','O','V'}, // pin OUT variable
+  {0xEC,'S','E','R'}, // toggle serial input / output
+  {0xAB,'I','N','M'}, // in mode : whether the interpreter automatically deals with destinary input 
+  {0xAC,'T','D','T'}, // Toggle destinitary : whether the interpreter appends the destinitary to the front of the message
+  {0xAA,'D','S','T'}, // Set destinitary : set where the message should go. (constant)
+
+  {0xf5,'D','B','G'}, // display RAM debug on screen (X to Y)
+  {0xf6,'R','D','S'}, // display RAM formated pretty (offset, length, eidth)
+  {0x00,'N','U','L'},
+  
+
+
+  
+  };
+
+
+// whole list of defines to define the mnemonic for each command. 
+#define jmp 0x11   
+#define jrp 0x12   
+#define jrm 0x13   
+#define xec 0x15   
+#define xey 0x16   
+#define xev 0x17   
+#define vev 0x18   
+#define vec 0x08   
+#define vey 0x28   
+#define xpp 0x91   
+#define xmm 0x81
+#define xmy 0x82   
+#define xpy 0x92  
+#define xmc 0x83   
+#define xpc 0x93   
+#define xdc 0x85   
+#define xuc 0x95   
+#define xdy 0x86  
+#define xuy 0x96   
+#define xoc 0x87   
+#define xpc 0x97   
+#define xoy 0x88
+#define xpy 0x98  
+#define qey 0x8a  
+#define qec 0x8b 
+#define qgy 0x8c   
+#define qgc 0x8d   
+#define qlc 0x8e   
+#define tov 0xb5  
+#define toc 0xb7   
+#define out 0xba   
+#define niv 0xbc  
+#define nic 0xbd
+#define emp 0xbf   
+#define wtc 0xe1   
+#define wtv 0xe2   
+#define twt 0xe3   
+#define drw 0xd5   
+#define upd 0xd6   
+#define cod 0xd7  
+#define gtl 0xd8   
+#define clr 0xe5   
+#define hex 0xe6   
+#define pnc 0xea
+#define pnv 0xfa   
+#define poc 0xeb   
+#define pov 0xfb   
+#define ser 0xec   
+#define inm 0xab   
+#define tdt 0xac   
+#define dst 0xaa   
+#define dbg 0xf5   
+#define rds 0xf6
+
+byte code[]={ //print hello world onto the bus
+  twt, 12, 250,
+  xec, 0, 'H',
+  xec, 1, 'e',
+  xec, 2, 'l',
+  xec, 3, 'l',
+  xec, 4, 'o',
+  xec, 5, ',',
+  xec, 6, ' ',
+  xec, 7, 'W',
+  xec, 8, 'o',
+  xec, 9, 'r',
+  xec, 10, 'l',
+  xec, 11, 'd',
+  xec, 12, '!',
+  xec, 13, 0,
+  xev, 14, 13,
+  tov, 13, 14,
+  xpp, 13, 0,
+  qec, 13, 14,
+  jrp, 0, 6,
+  jrm, 0, 15,
+  0,0,0,
+  out, 0, 0,  
+  jrp, 0, 0,
+  
+   
+};
+
+
+
+//byte code[]={ // recieve & print out what is on the bus, not really working right now. 
+//
+//  xec, 15, 0,
+//  niv, 15, 15,
+//  xev, 14, 15,
+//  tov, 13, 14,
+//  xpp, 15, 0,
+//  qec, 15, 14,
+//  jrp, 0, 9,
+//  jmp, 0, 3,
+//  0,0,0,
+//  0,0,0,
+//  0,0,0,
+//  0,0,0,
+//  out, 0, 0,
+//  
+//  emp, 0, 0,
+//  xec, 13,0,
+//  jmp, 0, 0,
+//  
+//   
+//};
+
+byte variables[512];
+
+int code_pos=0;
+char serial_in[16];
+byte serial_in_counter=0;
+char serial_out[16];
+bool executing=true;
+byte argument_length=0;
+byte instruction=0xea;
+byte arg1=0;
+byte arg2=0;
+byte arg3=0;
+byte arg4=0;
+byte arg5=0;
+bool jumping=false;
+bool debug=false;
+byte debug_range[]={0,14};
+bool _8bit=true;
+
+
+const int hold_time=100;
+
+
+
+void setup() {
+
+  
+
+  attachInterrupt(digitalPinToInterrupt(2),input,RISING);
+  // put your setup code here, to run once:
+  Serial.begin(115200);
+  Serial.setTimeout(3);
+  Serial.println("start");
+  //delay(5000);
+  pinMode(13,OUTPUT);
+}
+
+
+
+
+
+// cross-communication between arduinos
+// pin 2 is the clock pulse,
+// pin 11 is the 'busy' signal. 
+void output(byte var[], byte data_length){
+  noInterrupts();
+  
+  DDRB &=0b11110111; // set pin 10 & 11 to input (it should probably already be input though)
+  DDRD &=0b11111011;
+  while(bitRead(PIND,2) or bitRead(PINB,6)){  // wait if either pin 10 or 11 is activated. 
+    delayMicroseconds(1);
+  }
+  
+  
+  DDRD |=0b11111100; // set pins 2 through 7 to output
+  DDRB |=0b00001111; // set pins 8 to 11 to output
+
+  PORTB|= 0b00001000; // set busy signal high. 
+  for(int i =0; i<data_length; i++){ // loop through all datapoints in var[].
+    
+    PORTD &= 0b00000111;
+    PORTD |= 0b11111000& (var[i]<<3); // stick the first bit of the output in port d
+    //PORTD=255;
+    
+    
+    PORTB &= 0b11110000;
+    PORTB |= (var[i]<<3 | var[i]>>5)&0b00001111; // stick the second bit of the output to port0b. 
+    //PORTB=255;
+    
+    
+    
+    PORTD|=0b00000100; // set clock pulse high
+    delayMicroseconds(hold_time);
+    PORTD&=0b111111011; // lower clock pulse
+    delayMicroseconds(hold_time);
+
+  }
+  
+  PORTD&=0b00000011; // clear the outputs
+  PORTB&=0b11110000; // clear the outputs
+  
+  DDRD&=0b00000011; // set pins to input
+  DDRB&=0b11110000; // set pins to input
+  interrupts();
+}
+
+
+
+
+byte input(){
+  DDRD&=0b00000011; // set pins to input
+  DDRB&=0b11110000; // set pins to input 
+  
+  
+  byte z= 0;
+  z|= (PIND&0b11111100)>>3; 
+  z|= (PINB&0b00000011)<<5;
+
+ 
+  serial_in[serial_in_counter]=z;
+  serial_in_counter=(serial_in_counter+1)%16;
+
+  
+  
+}
+
+void loop() {
+
+  Serial.readBytes(serial_in,5);
+
+  if (executing){
+      instruction=code[code_pos];
+      if(debug){
+        Serial.print(code_pos); Serial.print(F(" : ")); Serial.print(int(instruction),HEX);  Serial.print(F(" : "));
+        for(int i=0; i<63; i++){
+//         Serial.print(pgm_read_byte_near(&names[i][0]));
+         if(pgm_read_byte_near(&names[i][0])==instruction){
+          Serial.write(pgm_read_byte_near(&names[i][1]));
+          Serial.write(pgm_read_byte_near(&names[i][2]));
+          Serial.write(pgm_read_byte_near(&names[i][3])); 
+          Serial.print(F(" ( "));
+          Serial.print(code[code_pos+1], HEX);
+          Serial.print(F(" , "));
+          Serial.print(code[code_pos+2], HEX);
+          
+         }
+        }
+        Serial.print(F(" ) : "));
+        for(byte i=debug_range[0]; i<=debug_range[1] and i>=debug_range[0]; i++){/* Serial.print(i, HEX); Serial.print(F("->"));*/ Serial.print(variables[i], HEX); Serial.print(' ');}
+        Serial.print(F(" |OUT: "));
+        for(byte i=0; i<16; i++){ Serial.print(serial_out[i], HEX); Serial.print(' ');}
+        Serial.print(F(" |IN: "));
+        for(byte i=0; i<16; i++){ Serial.print(serial_in[i], HEX); Serial.print(' ');}
+        Serial.println();
+      }
+      
+      
+      switch(instruction){
+          case 0x11: argument_length=2;      break;// jump to 2byte xy
+          case 0x12: argument_length=2;       break;// jump + 2byte xy
+          case 0x13: argument_length=2;       break;// jump - 2byte xy
+          
+          case 0x31: argument_length=2;       break;
+          case 0x32: argument_length=2;       break;
+          case 0x41: argument_length=2;       break;
+          case 0x42: argument_length=2;       break;
+          case 0x51: argument_length=2;       break;
+          case 0x52: argument_length=2;       break;
+          case 0x61: argument_length=2;       break;
+          case 0x62: argument_length=2;       break;
+          case 0x64: argument_length=1;       break;
+          
+          case 0x81: if(_8bit) {argument_length=1;}else{argument_length=2;}       break;// --
+          case 0x82: if(_8bit){argument_length=2;}else{argument_length=4;}       break;// -=y
+          case 0x83: if(_8bit){argument_length=2;}else{argument_length=4;}       break;// -=const
+          case 0x85: if(_8bit){argument_length=2;}else{argument_length=4;}       break;// /=const
+          case 0x86: if(_8bit){argument_length=2;}else{argument_length=4;}       break;// /=y
+          case 0x87: if(_8bit){argument_length=2;}else{argument_length=4;}       break;// %=const
+          case 0x88: if(_8bit){argument_length=2;}else{argument_length=4;}       break;// %=y
+          
+          case 0x91: argument_length=1;       break;// ++
+          case 0x92: if(_8bit){argument_length=2;}else{argument_length=4;}       break;// += var
+          case 0x93: if(_8bit){argument_length=2;}else{argument_length=4;}       break;// += const
+          case 0x95: if(_8bit){argument_length=2;}else{argument_length=4;}       break;// *= const
+          case 0x96: if(_8bit){argument_length=2;}else{argument_length=4;}       break;// *= var
+          case 0x97: if(_8bit){argument_length=2;}else{argument_length=4;}       break;// x^const
+          case 0x98: if(_8bit){argument_length=2;}else{argument_length=4;}       break;// x^y
+
+
+          case 0xb2: argument_length=3;       break;// max
+          case 0xb3: argument_length=3;       break;// min
+          case 0xb5: if(_8bit){argument_length=2;}else{argument_length=4;}       break;// serial_out[x]=y
+          case 0xb7: if(_8bit){argument_length=2;}else{argument_length=4;}       break;// serial_out[x]=const
+          case 0xb8: argument_length=1;       break;// serial_out[x]=control
+          case 0xba: argument_length=0;       break;// print serial_out to the serial line. 
+          case 0xbc: if(_8bit){argument_length=2;}else{argument_length=4;}       break;// put serial_in[x] into variables[variables[y]]
+          case 0xBD: if(_8bit){argument_length=2;}else{argument_length=4;}       break;// put serial_in[x] into variables[y]
+          case 0xe1: argument_length=1;       break;// wait for const
+          case 0xe2: argument_length=1;       break;// wait for variables[x]
+
+          case 0x8a: if(_8bit){argument_length=2;}else{argument_length=4;}       break; // if x=y, execute next instruction
+          case 0x8b: if(_8bit){argument_length=2;}else{argument_length=4;}       break; // if x=const, execute next instruction
+          case 0x8c: if(_8bit){argument_length=2;}else{argument_length=4;}       break; // if x>y, execute next instruction
+          case 0x8d: if(_8bit){argument_length=2;}else{argument_length=4;}       break; // if x>const, execute next instruction
+          case 0x8e: if(_8bit){argument_length=2;}else{argument_length=4;}       break; // if x<const, execute next instruction
+
+          case 0x15: if(_8bit){argument_length=2;}else{argument_length=4;}      break; // x=c
+          case 0x16: if(_8bit){argument_length=2;}else{argument_length=4;}       break; // x=y
+          case 0x17: if(_8bit){argument_length=2;}else{argument_length=4;}       break; // x=var[y]
+
+          case 0xe3: argument_length=2;       break; // wait x*256 + y
+
+          case 0xd5: argument_length=3;       break; // print M(x)(y)(t)  (draw instruction for display)
+
+          case 0xe6: argument_length=2;       break; //returns the hexidecimal value in ascii.
+
+          case 0xd7: argument_length=3;       break; // replaces the code with varibles    code_pos  ,  start(in the variable space)  ,  end(in the variable space) 
+
+          case 0xd8: argument_length=3;       break;
+          
+          case 0x18: if(_8bit){argument_length=2;}else{argument_length=4;}       break;
+          case 0x1a: if(_8bit){argument_length=2;}else{argument_length=4;}       break;
+          case 0x1b: if(_8bit){argument_length=2;}else{argument_length=4;}       break;
+
+          case 0x08: if(_8bit){argument_length=2;}else{argument_length=4;}       break;
+          case 0x28: if(_8bit){argument_length=2;}else{argument_length=4;}       break;
+          
+
+          
+          
+          default: argument_length=0; break; 
+          
+        }
+
+        
+        arg1=code[code_pos+1];
+        arg2=code[code_pos+2];
+        arg3=code[code_pos+3];
+        arg4=code[code_pos+4];
+        arg5=code[code_pos+5];
+        if(_8bit){
+          switch(instruction){
+            case 0x11: code_pos=(arg1*256+arg2); jumping=true;      break;// jump to 2byte xy
+            case 0x12: code_pos+=(arg1*256+arg2); jumping=true;      break;// jump + 2byte xy
+            case 0x13: code_pos-=(arg1*256+arg2); jumping=true;      break;// jump - 2byte xy
+            
+            case 0x81: variables[arg1]--;      break;// --
+            case 0x82: variables[arg1]-=variables[arg2];       break;// -=y
+            case 0x83: variables[arg1]-=arg2;       break;// -=const
+            case 0x85: variables[arg1]/=arg2;      break;// /=const
+            case 0x86: variables[arg1]/=variables[arg2];      break;// /=y
+            case 0x87: variables[arg1]%=arg2;       break;// %=const
+            case 0x88: variables[arg1]%=variables[arg2];       break;// %=y
+            
+            case 0x91: variables[arg1]++;          break;// ++
+            case 0x92: variables[arg1]+=variables[arg2];       break;// += var
+            case 0x93: variables[arg1]+=arg2;        break;// += const
+            case 0x95: variables[arg1]*=arg2;        break;// *= const
+            case 0x96: variables[arg1]*=variables[arg2];        break;// *= var
+            case 0x97: variables[arg1]=pow(variables[arg1],arg2);       break;// x^const
+            case 0x98: variables[arg1]=pow(variables[arg1],variables[arg2]);        break;// x^y
+   
+  
+            
+            case 0xb2: variables[arg1]=max(variables[arg2],variables[arg3]);      break;// max
+            case 0xb3: variables[arg1]=min(variables[arg2],variables[arg3]);       break;// min
+            
+            case 0xb5: serial_out[variables[arg1]]=variables[arg2];      break;// append x to serial_out
+            case 0xb7: serial_out[variables[arg1]]=arg2;        break;// append a constant to serial_out
+            case 0xb8: serial_out[variables[arg1]]=0xf9;      break;// append the controll character to serial_out
+            case 0xba: /*Serial.print((serial_out));*/ if(Serial){Serial.write(serial_out,16);} output(serial_out, 16); memset(serial_out,0,sizeof(serial_out));  break;// print serial_out to the serial line. 
+            case 0xbc:  variables[variables[arg2]]=serial_in[variables[arg1]]; /*serial_in[variables[arg1]]=0;*/    break;// put serial_in[x] into variables[variables[y]]
+            case 0xBD:  variables[arg2]=serial_in[variables[arg1]];  /*serial_in[variables[arg1]]=0;*/    break;// put serial_in[x] into variables[y]
+            case 0xBF: memset(serial_in, 0, 16); break;
+            case 0xe1: delay(arg1);       break;// wait for const
+            case 0xe2: delay(variables[arg1]);       break;// wait for variables[x]
+  
+            case 0x8a: if(variables[arg1]!=variables[arg2]){code_pos+=3;}       break; // if x=y, execute next instruction, otherwise, skip over it. 
+            case 0x8b: if(variables[arg1]!=arg2){code_pos+=3;}     break; // if x=const, execute next instruction
+            case 0x8c: if(variables[arg1]<=variables[arg2]){code_pos+=3;}       break; // if x>y, execute next instruction
+            case 0x8d: if(variables[arg1]<=arg2){code_pos+=3;}       break; // if x>const, execute next instruction
+            case 0x8e: if(variables[arg1]>=arg2){code_pos+=3;}       break; // if x<const, execute next instruction
+  
+            case 0x15: variables[arg1]=arg2;       break; // x=c
+            case 0x16: variables[arg1]=variables[arg2];       break; // x=y
+            case 0x17: variables[arg1]=variables[variables[arg2]];       break; // x=var[y]
+  
+            case 0xe3: delay(arg1*256 + arg2);                    break; // wait x*256 + y
+  
+            case 0xca: for(byte i=0; i<8; i++){ Serial.print(variables[i], HEX); Serial.print(' ');}   Serial.println();   break;
+
+            case 0xd5:  Serial.print('m');Serial.write(variables[arg1]);Serial.write(variables[arg2]);Serial.write(variables[arg3]); break; // print M(x)(y)(t)  (draw instruction for display)
+
+            case 0xe6: if(variables[arg1]%16<10){variables[arg1]=variables[arg1]+48; }else{variables[arg1]=variables[arg2]+55;} break; //returns the hexidecimal value in ascii.
+
+            case 0xd7: for(int i = 0; i< variables[arg2]-variables[arg3]; i++){code[i+variables[arg1]]=variables[i+variables[arg2]];}       break; // replaces the code with varibles    code_pos  ,  start(in the variable space)  ,  end(in the variable space) 
+
+            case 0xd6:  Serial.write('s'); break; // update the screen
+
+            case 0xd8: Serial.write('g');Serial.write(variables[arg2]);Serial.write(variables[arg3]); Serial.readBytes(serial_in,16); while(serial_in!='T'){Serial.readBytes(serial_in,16);} variables[arg1]=serial_in[0]; memset(serial_in,0,16);      break;
+
+            case 0x18: variables[variables[arg1]] = variables[variables[arg2]];      break; // var[var[arg1]]  these instructions are more complicated. 
+            case 0x1a: variables[variables[arg1]] += arg2;       break;
+            case 0x1b: variables[variables[arg1]] -= arg2;       break;
+            case 0x1C: variables[variables[arg1]] = arg2;        break;
+
+            case 0x08: variables[variables[arg1]] = arg2;       break;
+            case 0x28: variables[variables[arg1]] = variables[arg2];        break;
+
+            case 0xEA: pinMode(arg1,INPUT); variables[arg2]=digitalRead(arg1);     break;
+            case 0xEB: pinMode(arg1,OUTPUT); digitalWrite(arg1,arg2);     break;
+
+            case 0xFA: pinMode(variables[arg1],INPUT); variables[variables[arg2]]=digitalRead(variables[arg1]);     break;
+            case 0xFB: pinMode(variables[arg1],OUTPUT); digitalWrite(variables[arg1],variables[arg2]);     break;
+
+            case 0xEC: if(Serial){Serial.end(); } else{Serial.begin(115200); }; break;
+
+            case 0xF6: /* Easy ram dissplay: */RAM_DRAW(variables[arg1],arg2,arg3);  break;
+            case 0xE8: /* if control + char */ Serial.readBytes(serial_in,16); if(serial_in[1]==0x00){ code_pos+=3; } else{if(serial_in[0]==arg1 and serial_in[1]==arg2 ){ code_pos+=3; }}  break;
+           
+          }
+        }
+
+        
+        if(not jumping){
+          code_pos+=1+argument_length;
+        }
+        else{ jumping = false;}
+  }
+}
+
+
+
+
+
+void RAM_DRAW(byte offset, byte _length, byte width){
+  
+  for(byte i=0; i<_length;i++){
+    Serial.write('m');
+    Serial.write((i%width)*3+1);
+    Serial.write(i/width);
+    Serial.print((variables[offset+i]/16),HEX);
+
+    delay(0);
+
+    Serial.write('m');
+    Serial.write((i%width)*3+2);
+    Serial.write(i/width);
+    Serial.print((variables[offset+i]%16),HEX);
+
+  }
+  
+}
