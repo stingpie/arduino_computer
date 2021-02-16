@@ -21,32 +21,61 @@
 //  the "s" command instructs the arduino to display all the characters
 //  indicated by the "updates" array. 
 
-#include <EEPROM.h>
-
 #include "SPI.h"
 #include "Adafruit_GFX.h"
 #include "Adafruit_ILI9341.h"
 
-
 #define TFT_DC 9
 #define TFT_CS 10
-#define TFT_MOSI 11
-#define TFT_CLK 13
-#define TFT_RST 8
-#define TFT_MISO 12
+
+
+Adafruit_ILI9341 ucg = Adafruit_ILI9341(TFT_CS, TFT_DC);
 
 
 
 byte tilemap[30][40];
 // I think I can use pin 2,3,4,5,...9,10,11,12,13
+char input[5];
 int iter = 0;
-String input;
 byte updates[20][2];
-uint16_t color[2] = {0x0000, 0xffff}; // black & white
-Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC, TFT_MOSI, TFT_CLK, TFT_RST, TFT_MISO);
+
+
+
 
 
 const byte  PROGMEM font[][8] = {
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
   { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},   // U+0000 (space)
   { 0x18, 0x3C, 0x3C, 0x18, 0x18, 0x00, 0x18, 0x00},   // U+0001 (!)
   { 0x36, 0x36, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},   // U+0002 (")
@@ -174,7 +203,7 @@ const byte  PROGMEM font[][8] = {
   { 0xF0, 0xF0, 0xF0, 0xF0, 0x00, 0x00, 0x00, 0x00},   // U+259D (box top right)
   { 0xF0, 0xF0, 0xF0, 0xF0, 0x0F, 0x0F, 0x0F, 0x0F},   // U+259E (boxes top right and bottom left)
   { 0xF0, 0xF0, 0xF0, 0xF0, 0xFF, 0xFF, 0xFF, 0xFF},   // U+259F (boxes right and bottom)
-  { 0x00, 0x00, 0x10, 0x28, 0x44, 0x82, 0x00, 0x00},   // empty up arrow
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},   // empty up arrow
   { 0x20, 0x10, 0x08, 0x04, 0x08, 0x10, 0x20, 0x00},   // empty right arrow
   { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF},   // U+2581 (box 1/8)
   { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF},   // U+2582 (box 2/8)
@@ -206,141 +235,303 @@ const byte  PROGMEM font[][8] = {
   { 0xFC, 0xFC, 0xFC, 0xFC, 0xFC, 0xFC, 0xFC, 0xFC},
   { 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE},
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
 };
+
+const byte  PROGMEM charset2[][8] = {
+  {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  {0x08,0x08,0x08,0x08,0x08,0x08,0x08,0x08},
+  {0x00,0x00,0x00,0x00,0xFF,0x00,0x00,0x00},
+  {0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80},
+  {0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01},
+  {0x01,0x03,0x07,0x0f,0x1f,0x3f,0x7f,0xff},
+  {0xff,0x7f,0x3f,0x1f,0x0f,0x07,0x03,0x01},
+  {0x80,0xc0,0xe0,0xf0,0xf8,0xfc,0xfe,0xff},
+  {0xff,0xfe,0xfc,0xf8,0xf0,0xe0,0xc0,0x80},
+  {0xff,0x00,0xff,0x00,0xff,0x00,0xff,0x00},
+  {0x55,0x55,0x55,0x55,0x55,0x55,0x55,0x55},
+  {0xff,0x00,0xff,0x00,0xff,0x00,0xff,0x00},
+  {0xc3,0xe7,0x7e,0x3c,0x3c,0x7e,0xe7,0xc3},
+  {0x00,0x00,0x00,0x00,0xf0,0x00,0x00,0x00},
+  {0x08,0x08,0x08,0x08,0x00,0x00,0x00,0x00},
+  {0x00,0x00,0x00,0x00,0x0f,0x00,0x00,0x00},
+  {0x00,0x00,0x00,0x00,0x08,0x08,0x08,0x08},
+
+  };
+
+const byte  PROGMEM charset3[][8] = {
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x3E, 0x63, 0x73, 0x7B, 0x6F, 0x67, 0x3E, 0x00},   // U+0010 (0)
+  { 0xFE, 0x01, 0x01, 0xFE, 0x01, 0x01, 0x02, 0xfc},   // weird thing
+  { 0x3c, 0x42, 0x81, 0x81, 0x81, 0x81, 0x42, 0x3c},   // Circle
+  { 0x1E, 0x33, 0x30, 0x1C, 0x30, 0x33, 0x1E, 0x00},   // U+0013 (3)
+  { 0x18, 0x3C, 0x66, 0xc3, 0xc3, 0x66, 0x3c, 0x18},   // diamond
+  { 0x99, 0x66, 0x99, 0x66, 0x99, 0x66, 0x99, 0x66},   // low rez checkeboard
+  { 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55},   // highrez cjecekerboard
+  { 0xFF, 0xAA, 0xFF, 0xAA, 0xFF, 0xAA, 0xFF, 0xAA},   // 3/4 pattern
+  { 0xCC, 0x99, 0x33, 0x66, 0x33, 0xCC, 0x99, 0x33},   // slashes
+  { 0x1E, 0x33, 0x33, 0x3E, 0x30, 0x18, 0x0E, 0x00},   // U+0019 (9)
+  { 0x00, 0x00, 0x00, 0x00, 0x18, 0x3c, 0x3c, 0x18},   // lower half dot
+  { 0x0f, 0x0f, 0x0f, 0x0f, 0x00, 0x00, 0x00, 0x00},   // top right square
+  { 0x00, 0x00, 0x00, 0x00, 0x0f, 0x0f, 0x0f, 0x0f},   // bottom right square
+  { 0x00, 0x00, 0x00, 0x00, 0xf0, 0xf0, 0xf0, 0xf0},   // bottom left square
+  { 0xf0, 0xf0, 0xf0, 0xf0, 0x00, 0x00, 0x00, 0x00}    // top left square
+};
+
+const byte  PROGMEM charset4[][8] = { // boxes
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF},   // U+2581 (box 1/8)
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF},   // U+2582 (box 2/8)
+  { 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF},   // U+2583 (box 3/8)
+  { 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF},   // U+2584 (bottom half)
+  { 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},   // U+2585 (box 5/8)
+  { 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},   // U+2586 (box 6/8)
+  { 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},   // U+2587 (box 7/8)   
+  { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},   // U+2588 (solid)
+  { 0x7F, 0x7F, 0x7F, 0x7F, 0x7F, 0x7F, 0x7F, 0x7F},   // U+2589 (box 7/8)
+  { 0x3F, 0x3F, 0x3F, 0x3F, 0x3F, 0x3F, 0x3F, 0x3F},   // U+258A (box 6/8)
+  { 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F},   // U+258B (box 5/8)
+  { 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F},   // U+258C (left half)
+  { 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07},   // U+258D (box 3/8)
+  { 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03},   // U+258E (box 2/8)
+  { 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01}   // U+258F (box 1/8)  
+};
+
+
+
+
+int out_color=0xFFFF;
+
+
+
+
+
+
 
 
 bool screenupdate = false;
 //byte colors[30][5];
 
+byte graphics_mode=1;
+int cursorpos=0;
+bool Serial_active;
 
-
-
-
+byte scale=1;
+byte cull=1;
 
 void setup() {
+  pinMode(7, OUTPUT);
+  ucg.begin();
+  pinMode(2,INPUT);
+  Serial.setTimeout(3);
+  //ucg.select_font(font);
   // put your setup code here, to run once:
-  Serial.begin(1000000);
-  input.reserve(15);
-  Serial.setTimeout(15);
-  Serial.println(F("initing..."));
-//  for (byte x = 0; x < 30; x++) {
-//    for (byte y = 0; y < 40; y++) {
-//      tilemap[x][y] = (x + y * 40) % 255;
-//    }
-//
-//  }
+  ucg.fillScreen(0x0000);
+  //pinMode(14,OUTPUT);
 
 
-//  for (byte x = 0; x < 30; x++) {
-//    for (byte y = 0; y < 5; y++) {
-//      colors[x][y] = x * y;
-//    }
-//  }
-  for (byte x = 0; x < 2; x++) {
-    for (byte y = 0; y < 20; y++) {
-      updates[y][x] = 255;
+
+    Serial.println('D');
+    memset(input, 0, sizeof(input));
+    Serial.println('S');
+    for(int i=0;i<1;i++){
+    Serial.println('e');
     }
-  }
 
-  tft.begin();
-  Serial.println(F("init over"));
+    delay(100);
+    for(int i=0;i<1;i++){
+    Serial.println('U');
+    }
 
+   
 
 }
 
 void loop() {
 
-  input = Serial.readStringUntil("\n");
+  digitalWrite(7,digitalRead(2));
+
+  if(digitalRead(2)==HIGH){
+    Serial.begin(115200);
+    Serial.readBytes(input,5);
+    Serial_active=true;
+  }
+  else{
+    if(Serial_active==true){
+      Serial.end();
+      Serial_active=false;
+    }
+  }
+  if(input[0]!=0){
+   //Serial.println(input);
+  }
   
   if (screenupdate) {
-    for (int y = 0; y < 40; y++) {
-      for (int x = 0; x < 30; x++) {
-        byte tile = tilemap[x][y];
-        if (bitRead(updates[y / 2][x / 16], (x/2) % 8)) {
-          if (tile==0){
-            tft.fillRect(x*8,y*8,8, 8, color[0]);
-          }
-          else{
-          for (byte y2=0;y2<8;y2++){
-            for (byte x2=0;x2<8;x2++){
-                int pix = pgm_read_byte_near(&font[tile][y2]);
-                //int pix = int(font[tile][y2]);
-    
-                byte out = bitRead(pix, x2 );
-    //            if (bool(bitRead(colors[int(x / 8)][int(y / 8)], int(y / 8) % 8))) {
-                  tft.drawPixel( (x*8+x2), (y*8+y2), color[out]);
-    //            }
-    //            else {
-    //              tft.drawPixel( x, y, 0x0000);
-    //            }
-    
-              
+  //digitalWrite(7, HIGH);
+
+   for (byte y = 0; y < 40; y++) {
+        for (byte x = 0; x < 30; x++) {
+
+          if (bitRead(updates[byte(y/2)][byte(x / 16)], byte(x/2) % 8)) {
+          
+            byte tile = tilemap[x][y];
+            byte tile2;
+            byte tile3;
+            byte tile4;
+            if(graphics_mode>=4){
+              tile2=tilemap[(x+15)%30][y];
+              tile3=tilemap[x][(y+20)%40 ];
+              tile4=tilemap[(x+15)%30 ][(y+20)%40];              
             }
-           
-          }
+            else{
+              for (byte y2=0;y2<8;y2++){
+                for (byte x2=0;x2<8;x2++){
+                  if (graphics_mode==1){
+                    byte pix = pgm_read_byte_near(&font[tile][y2]);
+                    
+                    byte out = bitRead(pix, x2 );
+                    if (out){out_color=0xFFFF;}
+                    else{out_color=0x0000;}
+
+                    
+                  }
+                  else if (graphics_mode==2){
+                    byte pix1 = pgm_read_byte_near(&font[tile/16][y2]);
+                    byte out1 = bitRead(pix1, x2 );
+                    
+                    byte pix2 = pgm_read_byte_near(&font[tile%16][y2]);
+                    byte out2 = bitRead(pix2, x2 );
+                    if (out1^out2){out_color=0xFFFF;}
+                    else{out_color=0x0000;}
+
+                    
+                  }
+                  else if (graphics_mode==3){
+                   byte pix1=00;
+                   byte pix2=00;
+                   //Serial.print(tile>>4, HEX); Serial.print(" ");
+                   //Serial.println(tile%16, HEX);
+                   if((tile>>4)-(tile%16)>0){
+                    
+                      pix1 = pgm_read_byte_near(&charset2[(0+tile)/16][y2]);
+  
+                      pix2 = pgm_read_byte_near(&charset2[(0+tile)%16][y2]);
+                   }
+                   else{
+                     pix1 = pgm_read_byte_near(&charset3[(0+tile)/16][y2]);
+  
+                     pix2 = pgm_read_byte_near(&charset3[(0+tile)%16][y2]);}
+                      
+                    byte out1 = bitRead(pix1, x2 );
+                    byte out2 = bitRead(pix2, x2 );
+                    if (out1^out2){out_color=0xFFFF;}
+                    else{out_color=0x0000;}
+                    
+                  }
+                  else if (graphics_mode==4){
+                  
+                      byte pix1 = pgm_read_byte_near(&font[(0+tile)][y2]);
+                      byte pix2 = pgm_read_byte_near(&font[(0+tile2)][y2]);
+                      byte pix3 = pgm_read_byte_near(&font[(0+tile3)][y2]);
+                      byte pix4 = pgm_read_byte_near(&font[(0+tile4)][y2]);
+                      byte out1 = bitRead(pix1, x2 );
+                      byte out2 = bitRead(pix2, x2 );
+                      byte out3 = bitRead(pix3, x2 );
+                      byte out4 = bitRead(pix4, x2 );
+                      if ((out1 | out2) | (out3 | out4)){out_color=0xFFFF;}
+                      else{out_color=0x0000;}
+
+                    
+                    
+                  }
+                  else if (graphics_mode==5){
+
+                    byte pix = pgm_read_byte_near(&font[tile][y2]);
+                    
+                    byte out = bitRead(pix, x2 );
+
+                    if (out){out_color=0xFFFF;}
+                    else{out_color=0x0000;}
+                    
+                   
+                  }
+                  else if (graphics_mode==6){
+                    
+                    byte pix1 = pgm_read_byte_near(&charset4[tile/16][y2]);
+                    bool out1 = bitRead(pix1, x2 );
+                    
+                    byte pix2 = pgm_read_byte_near(&charset4[tile%16][y2]);
+                    bool out2 = bitRead(pix2, x2 );
+                    if (out1 or out2){out_color=0xFFFF;}
+                    else{out_color=0x0000;}
+                  }
+                  ucg.fillRect( (x*8+x2)*scale, (y*8+y2)*scale,scale,scale, out_color);
+                }  
+              }
+            }
         }
-      }
+          
+        }
+        //Serial.readBytes(input,15);
+//        if (input[0]=='c') {
+//          color[1][0]=input[1];
+//          color[1][1]=input[2];
+//          color[1][2]=input[3];
+//          //Serial.println(colmor[1]);
+//        }
         
-      }
-      input = Serial.readStringUntil("\n");
-      if (input.startsWith("c")) {
-        color[1] = input.substring(2).toInt();
-        //Serial.println(colmor[1]);
-      }
-      //Serial.println(y);
+
     }
+    //Serial.println('U');
     screenupdate = false;
-    for (byte x = 0; x < 2; x++) {
-      for (byte y = 0; y < 20; y++) {
-        updates[y][x] = 0;
-      }
-    }
+    memset(updates, 0, sizeof(updates));
+    //Serial.println('D');
+    //digitalWrite(7,LOW);
   }
 
-  if (input.startsWith("u")){
-    for (byte x = 0; x < 2; x++) {
-      for (byte y = 0; y < 20; y++) {
-        updates[y][x] = 255;
-      }
-    }
-  }
   
-  if (input.startsWith("c")){
-      color[1] = input.substring(2).toInt();
-      Serial.println(input.substring(2));
-      Serial.println(color[1]);
-  }
-  if (input.startsWith("m")){// Command: "mxxxyyyttt"
-      byte x = input.substring(1, 4).toInt();
-      byte y = input.substring(4, 7).toInt();
-      byte t = input.substring(7).toInt();
-      Serial.println(input.substring(4, 7).toInt());
+
+  //if (input[0]!=0){for(byte i=0; i<8;i++){Serial.println(String(byte(input[i])));}}
+  if (input[0]==109){// Command: "mxyt"
+      
+      byte x = (input[1])%(byte)(30/cull);
+      byte y = (input[2])%(byte)(40/cull);
+      byte t = input[3];
+      
       tilemap[x][y] = t;
-      bitWrite(updates[y/2][x/16], (x/2) % 8 ,1);
-  }
-   if (input.startsWith("s")){
+      bitSet(updates[y/2][x/16], (x/2) % 8);
+//      if(graphics_mode>=4){
+//        bitSet(updates[y/2][((x+15)%30)/16 ], ((x+15)%30)/2 );
+//        bitSet(updates[((y+20)%40)/2][((x)%30)/16 ], ((x)%30)/2 );
+//        bitSet(updates[((y+20)%40)/2][((x+15)%30)/16 ], ((x+15)%30)/2 );              
+//      }
+      
+      //Serial.println('S');
+      //graphics_mode=(graphics_mode+1)%6;
 
+      
+  }
+    if (input[0]=='g'){// Command: "gxy"
+      byte x = (input[1])%(byte)(30/cull);
+      byte y = (input[2])%(byte)(40/cull);
+      Serial.print('T');
+      Serial.print(tilemap[x][y]);
+
+      
+  }
+
+  if (input[0]=='A'){// Command: "Ax"
+      graphics_mode=input[1];     
+  }
+  if (input[0]=='C'){// Command: "C" //toggle twice cull
+      cull++;    
+  }
+
+  if (input[0]=='s'){
       screenupdate = true;
+      //memset(updates, 255, sizeof(updates));
+      //Serial.println('U');
+      
    }
-  
+  memset(input, 0, sizeof(input));
+  //digitalWrite(7, LOW);
 }
